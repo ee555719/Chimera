@@ -43,6 +43,12 @@
                                 <TextBlock Text="市场"/>
                             </StackPanel>
                         </ListViewItem>
+                        <ListViewItem Tag="AiAssistant" Padding="12,8">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🤖" Margin="0,0,8,0"/>
+                                <TextBlock Text="AI 助手"/>
+                            </StackPanel>
+                        </ListViewItem>
                         <ListViewItem Tag="Shortcuts" Padding="12,8">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="⌨" Margin="0,0,8,0"/>

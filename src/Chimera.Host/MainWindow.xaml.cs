@@ -14,6 +14,7 @@ public partial class MainWindow : Window
     private readonly DevToolsPage _devToolsPage;
     private readonly SecurityPage _securityPage;
     private readonly PluginMarketplacePage _marketplacePage;
+    private readonly AiAssistantPage _aiAssistantPage;
 
     public MainWindow()
     {
@@ -25,6 +26,7 @@ public partial class MainWindow : Window
         _devToolsPage = new DevToolsPage();
         _securityPage = new SecurityPage();
         _marketplacePage = new PluginMarketplacePage();
+        _aiAssistantPage = new AiAssistantPage();
         
         // Default to Plugins page
         NavigationList.SelectedIndex = 0;
@@ -61,6 +63,10 @@ public partial class MainWindow : Window
                 case "Marketplace":
                     ContentArea.Content = _marketplacePage;
                     StatusText.Text = "插件市场";
+                    break;
+                case "AiAssistant":
+                    ContentArea.Content = _aiAssistantPage;
+                    StatusText.Text = "AI 助手";
                     break;
                 case "Shortcuts":
                     ContentArea.Content = _shortcutEditorPage;
