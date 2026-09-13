@@ -34,4 +34,7 @@ public class PluginManifest
 
     [JsonPropertyName("dependencies")]
     public List<string> Dependencies { get; set; } = new();
+
+    [JsonPropertyName("runtime")]
+    public string? Runtime { get; set; }
 }

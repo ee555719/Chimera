@@ -6,7 +6,7 @@ This guide explains how to develop plugins for Chimera.
 
 A plugin consists of:
 
-1. A `.dll` assembly containing the plugin code
+1. A `.dll` assembly containing the plugin code (for .NET plugins)
 2. A `plugin.json` manifest file
 3. Any additional resources
 
@@ -25,13 +25,21 @@ Each plugin must have a `plugin.json` file:
   "entryType": "HelloWorld.Plugin",
   "minHostVersion": "1.0.0",
   "permissions": ["filesystem:read:documents", "network"],
-  "dependencies": []
+  "dependencies": [],
+  "runtime": "dotnet"
 }
 ```
 
-## Extension Points
+### Runtime Types
 
-### IStartupTask
+- `"runtime": "dotnet"` (default) - .NET plugin loaded via AssemblyLoadContext
+- `"runtime": "python"` - Python plugin loaded via subprocess with JSON-RPC communication
+
+## .NET Plugins
+
+### Extension Points
+
+#### IStartupTask
 
 Executes when the plugin is loaded:
 
@@ -46,7 +54,7 @@ public class MyStartupTask : IStartupTask
 }
 ```
 
-### IMenuContribution
+#### IMenuContribution
 
 Adds items to the application menu:
 
@@ -66,7 +74,7 @@ public class MyMenu : IMenuContribution
 }
 ```
 
-### IPageContribution
+#### IPageContribution
 
 Registers a navigation page:
 
@@ -81,7 +89,7 @@ public class MyPage : IPageContribution
 }
 ```
 
-### IThemeContribution
+#### IThemeContribution
 
 Defines a custom theme:
 
@@ -104,7 +112,7 @@ public class MyTheme : IThemeContribution
 }
 ```
 
-### ISettingsSection
+#### ISettingsSection
 
 Adds a settings page:
 
@@ -118,6 +126,89 @@ public class MySettings : ISettingsSection
     public Type SettingsType => typeof(MySettingsControl);
 }
 ```
+
+## Python Plugins
+
+Python plugins use process isolation with JSON-RPC 2.0 communication over stdio.
+
+### Plugin Structure
+
+```
+my-python-plugin/
+├── main/
+│   └── main.py          # Plugin entry point
+├── library.txt           # Python dependencies (optional)
+├── plugin.json           # Plugin manifest
+└── README.md            # Documentation
+```
+
+### Plugin Manifest for Python
+
+```json
+{
+  "id": "com.example.python",
+  "name": "My Python Plugin",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "runtime": "python",
+  "entryAssembly": "main/main.py",
+  "minHostVersion": "1.0.0",
+  "permissions": ["notifications"],
+  "dependencies": []
+}
+```
+
+### Python SDK Usage
+
+```python
+from chimera_sdk import ChimeraPlugin, ui, logger
+
+plugin = ChimeraPlugin()
+
+@plugin.on_startup
+def on_startup():
+    logger.info("Python plugin loaded!")
+    
+    # Register a custom tab
+    ui.register_tab(
+        title="My Panel",
+        elements=[
+            {"type": "text", "content": "Hello from Python!"},
+            {"type": "button", "label": "Click Me", "action": "my_plugin.button_click"}
+        ]
+    )
+
+@plugin.on_shutdown
+def on_shutdown():
+    logger.info("Python plugin unloaded!")
+
+def handle_button_click(params):
+    logger.info("Button clicked!")
+    return {"success": True}
+
+plugin.register_handler("my_plugin.button_click", handle_button_click)
+
+if __name__ == "__main__":
+    plugin.run()
+```
+
+### Dependencies
+
+Add Python package dependencies to `library.txt`:
+
+```
+requests>=2.28.0
+flask>=2.0.0
+```
+
+Dependencies are automatically installed when the plugin is installed.
+
+### Available SDK Modules
+
+- `ui` - UI operations (register tabs, inject content, customize styles)
+- `fs` - File system operations (request write/delete with user confirmation)
+- `process` - Process operations (request shutdown, launch external programs)
+- `logger` - Logging operations (debug, info, warning, error)
 
 ## Permission Model
 
@@ -170,11 +261,21 @@ public class MyPlugin : IStartupTask
 
 ## Building and Testing
 
+### .NET Plugins
+
 1. Create a new class library project
 2. Reference `Chimera.Abstractions`
 3. Implement the desired interfaces
 4. Build and place the output in the plugins directory
 5. Restart the host or use hot-reload in development mode
+
+### Python Plugins
+
+1. Create a new directory in the plugins folder
+2. Add `main/main.py` with your plugin code
+3. Add `plugin.json` with `"runtime": "python"`
+4. Optionally add `library.txt` with Python dependencies
+5. Restart the host
 
 ## Best Practices
 

@@ -47,7 +47,23 @@
             </ListView.View>
         </ListView>
 
-        <!-- Footer Info -->
-        <TextBlock Grid.Row="2" x:Name="FooterInfo" Text="" Foreground="Gray" Margin="0,8,0,0"/>
+        <!-- Footer -->
+        <Grid Grid.Row="2" Margin="0,8,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <TextBlock x:Name="FooterInfo" Text="" Foreground="Gray" VerticalAlignment="Center"/>
+            
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button x:Name="RestartButton" Content="重启" Click="Restart_Click"
+                        Padding="16,6" Background="#FF6B35" Foreground="White" BorderThickness="0"
+                        Margin="0,0,8,0" ToolTip="重启应用以生效新安装的插件"/>
+                <Button x:Name="PackButton" Content="打包" Click="Pack_Click"
+                        Padding="16,6" Background="#28A745" Foreground="White" BorderThickness="0"
+                        ToolTip="将当前配置打包成独立exe"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

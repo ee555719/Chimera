@@ -1,0 +1,12 @@
+{
+  "id": "com.example.python",
+  "name": "Python Plugin Template",
+  "version": "1.0.0",
+  "author": "Chimera Team",
+  "license": "AGPL-3.0-or-later",
+  "runtime": "python",
+  "entryAssembly": "main/main.py",
+  "minHostVersion": "1.0.0",
+  "permissions": ["notifications"],
+  "dependencies": []
+}
