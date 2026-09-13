@@ -13,11 +13,19 @@ public class PythonPluginManager : IDisposable
     private readonly Dictionary<string, Process> _processes = new();
     private readonly Dictionary<string, Dictionary<int, TaskCompletionSource<JsonElement>>> _pendingRequests = new();
     private readonly Dictionary<string, StringBuilder> _errorBuffers = new();
+    private readonly PluginPermissionManager? _permissionManager;
+    private readonly SecurityAuditLogger? _auditLogger;
     private readonly object _lock = new();
     
     public event EventHandler<PythonLogEventArgs>? LogReceived;
     public event EventHandler<PythonErrorEventArgs>? ErrorReceived;
     public event EventHandler<string>? PluginCrashed;
+
+    public PythonPluginManager(PluginPermissionManager? permissionManager = null, SecurityAuditLogger? auditLogger = null)
+    {
+        _permissionManager = permissionManager;
+        _auditLogger = auditLogger;
+    }
 
     /// <summary>
     /// Start a Python plugin process
@@ -85,6 +93,24 @@ public class PythonPluginManager : IDisposable
 
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
+    }
+
+    /// <summary>
+    /// Check if a plugin has the required permission before sending a request
+    /// </summary>
+    public async Task<bool> CheckPermissionAsync(string pluginId, string permission)
+    {
+        if (_permissionManager == null)
+            return true; // No permission manager, allow by default
+
+        var hasPermission = await _permissionManager.HasPermissionAsync(pluginId, permission);
+        if (!hasPermission)
+        {
+            _auditLogger?.LogSecurityViolation(pluginId, permission, 
+                $"Plugin {pluginId} attempted to use {permission} without permission");
+            return false;
+        }
+        return true;
     }
 
     /// <summary>

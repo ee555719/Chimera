@@ -12,14 +12,19 @@ public class PluginManager
     private readonly Dictionary<string, PluginContext> _loadedPlugins = new();
     private readonly Dictionary<string, PluginManifest> _manifests = new();
     private readonly IPluginLogger? _logger;
+    private readonly PluginPermissionManager? _permissionManager;
+    private readonly SecurityAuditLogger? _auditLogger;
 
     public IReadOnlyDictionary<string, PluginContext> LoadedPlugins => _loadedPlugins;
     public IReadOnlyDictionary<string, PluginManifest> Manifests => _manifests;
 
-    public PluginManager(string pluginsDirectory, IPluginLogger? logger = null)
+    public PluginManager(string pluginsDirectory, IPluginLogger? logger = null, 
+        PluginPermissionManager? permissionManager = null, SecurityAuditLogger? auditLogger = null)
     {
         _pluginsDirectory = pluginsDirectory;
         _logger = logger;
+        _permissionManager = permissionManager;
+        _auditLogger = auditLogger;
         
         if (!Directory.Exists(_pluginsDirectory))
         {
@@ -69,6 +74,20 @@ public class PluginManager
             throw new FileNotFoundException($"Entry assembly not found: {entryAssemblyPath}");
         }
 
+        // Check permissions before loading
+        if (_permissionManager != null && manifest.Permissions.Any())
+        {
+            foreach (var permission in manifest.Permissions)
+            {
+                if (!await _permissionManager.HasPermissionAsync(pluginId, permission))
+                {
+                    _auditLogger?.LogSecurityViolation(pluginId, permission, 
+                        $"Plugin {pluginId} requires permission {permission} which is not granted");
+                    throw new Abstractions.Exceptions.PluginPermissionException(pluginId, permission);
+                }
+            }
+        }
+
         var context = new PluginContext(manifest, pluginDir);
         var assembly = Assembly.LoadFrom(entryAssemblyPath);
         
@@ -86,6 +105,7 @@ public class PluginManager
         }
 
         _loadedPlugins[pluginId] = context;
+        _auditLogger?.LogPluginLoad(pluginId, true);
         _logger?.Info($"Plugin loaded: {manifest.Name}");
     }
 

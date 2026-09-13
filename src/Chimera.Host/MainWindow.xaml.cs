@@ -12,6 +12,7 @@ public partial class MainWindow : Window
     private readonly AboutPage _aboutPage;
     private readonly ShortcutEditorPage _shortcutEditorPage;
     private readonly DevToolsPage _devToolsPage;
+    private readonly SecurityPage _securityPage;
 
     public MainWindow()
     {
@@ -21,6 +22,7 @@ public partial class MainWindow : Window
         _aboutPage = new AboutPage();
         _shortcutEditorPage = new ShortcutEditorPage();
         _devToolsPage = new DevToolsPage();
+        _securityPage = new SecurityPage();
         
         // Default to Plugins page
         NavigationList.SelectedIndex = 0;
@@ -61,6 +63,10 @@ public partial class MainWindow : Window
                 case "DevTools":
                     ContentArea.Content = _devToolsPage;
                     StatusText.Text = "插件调试器";
+                    break;
+                case "Security":
+                    ContentArea.Content = _securityPage;
+                    StatusText.Text = "安全管理";
                     break;
                 case "About":
                     ContentArea.Content = _aboutPage;
