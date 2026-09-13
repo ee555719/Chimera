@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using Chimera.Host.Pages;
+using Chimera.Host.Pages.DevTools;
 
 namespace Chimera.Host;
 
@@ -9,6 +10,8 @@ public partial class MainWindow : Window
 {
     private readonly PluginsPage _pluginsPage;
     private readonly AboutPage _aboutPage;
+    private readonly ShortcutEditorPage _shortcutEditorPage;
+    private readonly DevToolsPage _devToolsPage;
 
     public MainWindow()
     {
@@ -16,12 +19,28 @@ public partial class MainWindow : Window
         
         _pluginsPage = new PluginsPage();
         _aboutPage = new AboutPage();
+        _shortcutEditorPage = new ShortcutEditorPage();
+        _devToolsPage = new DevToolsPage();
         
         // Default to Plugins page
         NavigationList.SelectedIndex = 0;
         ContentArea.Content = _pluginsPage;
         StatusText.Text = "就绪";
         VersionText.Text = $"版本 {typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "1.0.0"}";
+        
+        // Register keyboard shortcut for DevTools (F12)
+        PreviewKeyDown += MainWindow_PreviewKeyDown;
+    }
+
+    private void MainWindow_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.F12)
+        {
+            // Open DevTools
+            NavigationList.SelectedItem = NavigationList.Items
+                .OfType<ListViewItem>()
+                .FirstOrDefault(i => i.Tag?.ToString() == "DevTools");
+        }
     }
 
     private void NavigationList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -34,6 +53,14 @@ public partial class MainWindow : Window
                 case "Plugins":
                     ContentArea.Content = _pluginsPage;
                     StatusText.Text = "安装插件";
+                    break;
+                case "Shortcuts":
+                    ContentArea.Content = _shortcutEditorPage;
+                    StatusText.Text = "快捷键编辑器";
+                    break;
+                case "DevTools":
+                    ContentArea.Content = _devToolsPage;
+                    StatusText.Text = "插件调试器";
                     break;
                 case "About":
                     ContentArea.Content = _aboutPage;

@@ -37,6 +37,18 @@
                                 <TextBlock Text="安装插件"/>
                             </StackPanel>
                         </ListViewItem>
+                        <ListViewItem Tag="Shortcuts" Padding="12,8">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⌨" Margin="0,0,8,0"/>
+                                <TextBlock Text="快捷键"/>
+                            </StackPanel>
+                        </ListViewItem>
+                        <ListViewItem Tag="DevTools" Padding="12,8">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🔧" Margin="0,0,8,0"/>
+                                <TextBlock Text="调试器"/>
+                            </StackPanel>
+                        </ListViewItem>
                         <ListViewItem Tag="About" Padding="12,8">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="ℹ" Margin="0,0,8,0"/>
