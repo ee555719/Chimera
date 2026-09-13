@@ -34,7 +34,13 @@
                         <ListViewItem Tag="Plugins" Padding="12,8">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="🧩" Margin="0,0,8,0"/>
-                                <TextBlock Text="安装插件"/>
+                                <TextBlock Text="已安装"/>
+                            </StackPanel>
+                        </ListViewItem>
+                        <ListViewItem Tag="Marketplace" Padding="12,8">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🛒" Margin="0,0,8,0"/>
+                                <TextBlock Text="市场"/>
                             </StackPanel>
                         </ListViewItem>
                         <ListViewItem Tag="Shortcuts" Padding="12,8">

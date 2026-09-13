@@ -13,6 +13,7 @@ public partial class MainWindow : Window
     private readonly ShortcutEditorPage _shortcutEditorPage;
     private readonly DevToolsPage _devToolsPage;
     private readonly SecurityPage _securityPage;
+    private readonly PluginMarketplacePage _marketplacePage;
 
     public MainWindow()
     {
@@ -23,6 +24,7 @@ public partial class MainWindow : Window
         _shortcutEditorPage = new ShortcutEditorPage();
         _devToolsPage = new DevToolsPage();
         _securityPage = new SecurityPage();
+        _marketplacePage = new PluginMarketplacePage();
         
         // Default to Plugins page
         NavigationList.SelectedIndex = 0;
@@ -54,7 +56,11 @@ public partial class MainWindow : Window
             {
                 case "Plugins":
                     ContentArea.Content = _pluginsPage;
-                    StatusText.Text = "安装插件";
+                    StatusText.Text = "已安装插件";
+                    break;
+                case "Marketplace":
+                    ContentArea.Content = _marketplacePage;
+                    StatusText.Text = "插件市场";
                     break;
                 case "Shortcuts":
                     ContentArea.Content = _shortcutEditorPage;
