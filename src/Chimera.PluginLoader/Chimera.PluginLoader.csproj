@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Chimera.PluginLoader</RootNamespace>
+    <AssemblyName>Chimera.PluginLoader</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Chimera.Abstractions\Chimera.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

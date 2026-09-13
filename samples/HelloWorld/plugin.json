@@ -1,0 +1,12 @@
+{
+  "id": "com.example.hello",
+  "name": "Hello World",
+  "version": "1.0.0",
+  "author": "Chimera Team",
+  "license": "AGPL-3.0-or-later",
+  "entryAssembly": "HelloWorld.dll",
+  "entryType": "HelloWorld.Plugin",
+  "minHostVersion": "1.0.0",
+  "permissions": [],
+  "dependencies": []
+}
