@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             mc:Ignorable="d" d:DesignHeight="400" d:DesignWidth="600">
+             mc:Ignorable="d" d:DesignHeight="500" d:DesignWidth="700">
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -11,31 +11,50 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
+        <!-- Header with Tabs -->
         <Grid Grid.Row="0" Margin="0,0,0,16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Text="已安装插件" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
-            <Button Grid.Column="1" Content="安装本地插件" Click="InstallPlugin_Click"
-                    Padding="16,6" Background="#0078D4" Foreground="White" BorderThickness="0"/>
+            
+            <StackPanel Orientation="Horizontal">
+                <RadioButton x:Name="TabInstalled" Content="已安装" IsChecked="True" 
+                             Checked="TabInstalled_Checked" Padding="12,6" FontSize="14"/>
+                <RadioButton x:Name="TabMarket" Content="插件市场" 
+                             Checked="TabMarket_Checked" Padding="12,6" FontSize="14" Margin="8,0,0,0"/>
+            </StackPanel>
+            
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="导出配置" Click="ExportConfig_Click"
+                        Padding="12,6" Background="#6C757D" Foreground="White" BorderThickness="0"
+                        Margin="0,0,8,0" ToolTip="导出当前配置和插件数据"/>
+                <Button Content="导入配置" Click="ImportConfig_Click"
+                        Padding="12,6" Background="#6C757D" Foreground="White" BorderThickness="0"
+                        Margin="0,0,8,0" ToolTip="导入配置和插件数据"/>
+                <Button Content="安装本地插件" Click="InstallPlugin_Click"
+                        Padding="12,6" Background="#0078D4" Foreground="White" BorderThickness="0"/>
+            </StackPanel>
         </Grid>
 
-        <!-- Plugin List -->
-        <ListView x:Name="PluginListView" Grid.Row="1" BorderThickness="0">
+        <!-- Installed Plugins Tab -->
+        <ListView x:Name="PluginListView" Grid.Row="1" BorderThickness="0" 
+                  Visibility="Visible">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="名称" DisplayMemberBinding="{Binding Name}" Width="200"/>
-                    <GridViewColumn Header="版本" DisplayMemberBinding="{Binding Version}" Width="80"/>
-                    <GridViewColumn Header="作者" DisplayMemberBinding="{Binding Author}" Width="120"/>
+                    <GridViewColumn Header="名称" DisplayMemberBinding="{Binding Name}" Width="180"/>
+                    <GridViewColumn Header="版本" DisplayMemberBinding="{Binding Version}" Width="70"/>
+                    <GridViewColumn Header="作者" DisplayMemberBinding="{Binding Author}" Width="100"/>
+                    <GridViewColumn Header="类型" DisplayMemberBinding="{Binding Runtime}" Width="70"/>
                     <GridViewColumn Header="状态" DisplayMemberBinding="{Binding Status}" Width="80"/>
-                    <GridViewColumn Header="操作" Width="150">
+                    <GridViewColumn Header="操作" Width="200">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
+                                    <Button Content="回滚" Click="RollbackPlugin_Click" Tag="{Binding Id}" 
+                                            Margin="0,0,4,0" Padding="6,2" ToolTip="回滚到上一版本"/>
                                     <Button Content="卸载" Click="UninstallPlugin_Click" Tag="{Binding Id}" 
-                                            Margin="0,0,8,0" Padding="8,2"/>
+                                            Margin="0,0,4,0" Padding="6,2"/>
                                     <CheckBox Content="启用" IsChecked="{Binding IsEnabled}" 
                                               Checked="TogglePlugin_Checked" Unchecked="TogglePlugin_Unchecked"
                                               Tag="{Binding Id}"/>
@@ -46,6 +65,53 @@
                 </GridView>
             </ListView.View>
         </ListView>
+
+        <!-- Market Tab -->
+        <Grid x:Name="MarketPanel" Grid.Row="1" Visibility="Collapsed">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            
+            <!-- Search Bar -->
+            <Grid Grid.Row="0" Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="SearchBox" ToolTip="搜索插件..."
+                         KeyDown="SearchBox_KeyDown"/>
+                <Button Grid.Column="1" Content="搜索" Click="Search_Click"
+                        Padding="12,6" Margin="8,0,0,0"/>
+            </Grid>
+            
+            <!-- Market List -->
+            <ListView x:Name="MarketListView" Grid.Row="1" BorderThickness="0">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="名称" DisplayMemberBinding="{Binding Name}" Width="180"/>
+                        <GridViewColumn Header="版本" DisplayMemberBinding="{Binding Version}" Width="70"/>
+                        <GridViewColumn Header="作者" DisplayMemberBinding="{Binding Author}" Width="100"/>
+                        <GridViewColumn Header="描述" DisplayMemberBinding="{Binding Description}" Width="200"/>
+                        <GridViewColumn Header="下载" Width="80">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Downloads, StringFormat={}{0:N0}}"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn Header="操作" Width="100">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="安装" Click="InstallFromMarket_Click" Tag="{Binding Id}"
+                                            Padding="8,2" Background="#28A745" Foreground="White" BorderThickness="0"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+        </Grid>
 
         <!-- Footer -->
         <Grid Grid.Row="2" Margin="0,8,0,0">
@@ -59,7 +125,7 @@
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button x:Name="RestartButton" Content="重启" Click="Restart_Click"
                         Padding="16,6" Background="#FF6B35" Foreground="White" BorderThickness="0"
-                        Margin="0,0,8,0" ToolTip="重启应用以生效新安装的插件"/>
+                        Margin="0,0,8,0" ToolTip="重启应用以生效新安装的插件" Visibility="Collapsed"/>
                 <Button x:Name="PackButton" Content="打包" Click="Pack_Click"
                         Padding="16,6" Background="#28A745" Foreground="White" BorderThickness="0"
                         ToolTip="将当前配置打包成独立exe"/>
