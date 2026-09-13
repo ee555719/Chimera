@@ -13,19 +13,19 @@ namespace Chimera.Host.Pages;
 
 public partial class PluginsPage : UserControl
 {
-    private const string PluginsDirectory = "plugins";
     private bool _needsRestart;
     private readonly EmbeddablePythonManager _pythonManager;
 
     public PluginsPage()
     {
         InitializeComponent();
-        _pythonManager = new EmbeddablePythonManager();
+        _pythonManager = new EmbeddablePythonManager(ChimeraPaths.PythonDirectory);
         Loaded += PluginsPage_Loaded;
     }
 
     private void PluginsPage_Loaded(object sender, RoutedEventArgs e)
     {
+        ChimeraPaths.EnsureDirectories();
         LoadPlugins();
     }
 
@@ -33,9 +33,9 @@ public partial class PluginsPage : UserControl
     {
         var plugins = new List<PluginInfo>();
         
-        if (Directory.Exists(PluginsDirectory))
+        if (Directory.Exists(ChimeraPaths.PluginDirectory))
         {
-            foreach (var pluginDir in Directory.GetDirectories(PluginsDirectory))
+            foreach (var pluginDir in Directory.GetDirectories(ChimeraPaths.PluginDirectory))
             {
                 var manifestPath = Path.Combine(pluginDir, "plugin.json");
                 if (File.Exists(manifestPath))
@@ -58,7 +58,7 @@ public partial class PluginsPage : UserControl
                             });
                         }
                     }
-                    catch (Exception ex)
+                    catch
                     {
                         // Log error
                     }
@@ -67,7 +67,7 @@ public partial class PluginsPage : UserControl
         }
 
         PluginListView.ItemsSource = plugins;
-        FooterInfo.Text = $"共 {plugins.Count} 个插件";
+        FooterInfo.Text = $"共 {plugins.Count} 个插件 | 插件目录: {ChimeraPaths.PluginDirectory}";
         
         // Show restart button if needed
         RestartButton.Visibility = _needsRestart ? Visibility.Visible : Visibility.Collapsed;
@@ -85,9 +85,11 @@ public partial class PluginsPage : UserControl
         {
             try
             {
+                FooterInfo.Text = "正在安装插件...";
                 InstallPluginFromZip(dialog.FileName);
                 _needsRestart = true;
                 RestartButton.Visibility = Visibility.Visible;
+                FooterInfo.Text = "插件安装完成";
                 
                 var result = MessageBox.Show(
                     "插件安装成功！需要重启应用才能生效。\n\n是否立即重启？",
@@ -102,6 +104,7 @@ public partial class PluginsPage : UserControl
             }
             catch (Exception ex)
             {
+                FooterInfo.Text = $"安装失败: {ex.Message}";
                 MessageBox.Show($"安装失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -109,7 +112,7 @@ public partial class PluginsPage : UserControl
 
     private void InstallPluginFromZip(string zipPath)
     {
-        var tempDir = Path.Combine(Path.GetTempPath(), "chimera_plugin_" + Guid.NewGuid().ToString("N")[..8]);
+        var tempDir = Path.Combine(ChimeraPaths.TempDirectory, "plugin_" + Guid.NewGuid().ToString("N")[..8]);
         
         try
         {
@@ -133,14 +136,24 @@ public partial class PluginsPage : UserControl
             // Check if this is a Python plugin
             var isPythonPlugin = manifest.Runtime?.Equals("python", StringComparison.OrdinalIgnoreCase) == true;
             
-            // Move to plugins directory
-            var pluginDir = Path.Combine(PluginsDirectory, manifest.Id);
+            // For Python plugins, validate main.py exists
+            if (isPythonPlugin)
+            {
+                var mainPyPath = Path.Combine(Path.GetDirectoryName(manifestPath)!, "main", "main.py");
+                if (!File.Exists(mainPyPath))
+                {
+                    throw new InvalidOperationException("Python 插件必须包含 main/main.py 入口文件");
+                }
+            }
+            
+            // Move to plugin directory
+            var pluginDir = ChimeraPaths.GetPluginPath(manifest.Id);
             if (Directory.Exists(pluginDir))
             {
                 Directory.Delete(pluginDir, true);
             }
             
-            // Copy all files from the extracted directory (which might be in a subdirectory)
+            // Copy all files from the extracted directory
             var sourceDir = Path.GetDirectoryName(manifestPath)!;
             CopyDirectory(sourceDir, pluginDir);
             
@@ -171,28 +184,15 @@ public partial class PluginsPage : UserControl
         // Ensure Python is available
         if (!_pythonManager.IsPythonInstalled())
         {
-            var result = MessageBox.Show(
-                "Python 插件需要 Python 运行时。是否自动安装 Embeddable Python？",
-                "Python 未找到",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
-            
-            if (result == MessageBoxResult.Yes)
+            FooterInfo.Text = "正在安装 Python 运行时...";
+            try
             {
-                try
-                {
-                    FooterInfo.Text = "正在下载 Python...";
-                    await _pythonManager.InstallPythonAsync();
-                    FooterInfo.Text = "Python 安装完成";
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"安装 Python 失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
+                await _pythonManager.InstallPythonAsync();
+                FooterInfo.Text = "Python 安装完成";
             }
-            else
+            catch (Exception ex)
             {
+                MessageBox.Show($"安装 Python 失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
         }
@@ -203,7 +203,7 @@ public partial class PluginsPage : UserControl
             FooterInfo.Text = "正在安装 Python 依赖...";
             await _pythonManager.InstallDependenciesAsync(libraryFile, new Progress<string>(line =>
             {
-                FooterInfo.Text = line;
+                Dispatcher.Invoke(() => FooterInfo.Text = line);
             }));
             FooterInfo.Text = "依赖安装完成";
         }
@@ -256,7 +256,8 @@ public partial class PluginsPage : UserControl
             Process.Start(new ProcessStartInfo
             {
                 FileName = exePath,
-                UseShellExecute = true
+                UseShellExecute = true,
+                WorkingDirectory = ChimeraPaths.BaseDirectory
             });
         }
         
@@ -276,7 +277,9 @@ public partial class PluginsPage : UserControl
         {
             try
             {
+                FooterInfo.Text = "正在打包...";
                 PackApplication(dialog.FileName);
+                FooterInfo.Text = "打包完成";
                 MessageBox.Show(
                     $"打包成功！\n\n文件已保存到：{dialog.FileName}",
                     "打包完成",
@@ -285,6 +288,7 @@ public partial class PluginsPage : UserControl
             }
             catch (Exception ex)
             {
+                FooterInfo.Text = $"打包失败: {ex.Message}";
                 MessageBox.Show($"打包失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -306,10 +310,10 @@ public partial class PluginsPage : UserControl
             }
         };
         
-        // Collect installed plugins
-        if (Directory.Exists(PluginsDirectory))
+        // Collect installed plugins from D:\ChimeraPlugin
+        if (Directory.Exists(ChimeraPaths.PluginDirectory))
         {
-            foreach (var pluginDir in Directory.GetDirectories(PluginsDirectory))
+            foreach (var pluginDir in Directory.GetDirectories(ChimeraPaths.PluginDirectory))
             {
                 var manifestPath = Path.Combine(pluginDir, "plugin.json");
                 if (File.Exists(manifestPath))
@@ -325,7 +329,7 @@ public partial class PluginsPage : UserControl
         }
         
         // Create output directory
-        var outputDir = Path.Combine(Path.GetTempPath(), "chimera_pack_" + Guid.NewGuid().ToString("N")[..8]);
+        var outputDir = Path.Combine(ChimeraPaths.TempDirectory, "pack_" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(outputDir);
         
         try
@@ -337,10 +341,11 @@ public partial class PluginsPage : UserControl
                 File.Copy(hostExe, Path.Combine(outputDir, "Chimera.exe"));
             }
             
-            // Copy plugins directory
-            if (Directory.Exists(PluginsDirectory))
+            // Copy plugins directory (from D:\ChimeraPlugin)
+            var pluginsDir = Path.Combine(outputDir, "plugins");
+            if (Directory.Exists(ChimeraPaths.PluginDirectory))
             {
-                CopyDirectory(PluginsDirectory, Path.Combine(outputDir, PluginsDirectory));
+                CopyDirectory(ChimeraPaths.PluginDirectory, pluginsDir);
             }
             
             // Write manifest
@@ -374,7 +379,7 @@ public partial class PluginsPage : UserControl
             {
                 try
                 {
-                    var pluginDir = Path.Combine(PluginsDirectory, pluginId);
+                    var pluginDir = ChimeraPaths.GetPluginPath(pluginId);
                     if (Directory.Exists(pluginDir))
                     {
                         Directory.Delete(pluginDir, true);
